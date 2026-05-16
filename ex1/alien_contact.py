@@ -90,7 +90,7 @@ def main() -> None:
         for error in e.errors():
             if not error['loc']:
                 m = error['msg']
-                print(m.replace("Value error,",""))
+                print(m.replace("Value error,","").strip())
             else:
                 print(f"Error in {error['loc'][0]}: {error['msg']}")
 

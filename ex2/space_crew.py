@@ -8,7 +8,7 @@ class CrewRanks(str, Enum):
     CADET = "cadet"
     OFFICER = "officer"
     LIEUTENANT = "lieutenant"
-    CAPTION = "caption"
+    CAPTAIN = "captain"
     COMMANDER = "commander"
 
 
@@ -36,35 +36,40 @@ class SpaceMission(BaseModel):
     def custom_rules(self) -> 'SpaceMission':
         if not self.mission_id.startswith("M"):
             raise ValueError("Mission ID must start with 'M'")
+            
         cap_or_command = False
         for c in self.crew:
-            if c.rank == CrewRanks.CAPTION or c.rank == CrewRanks.COMMANDER:
+            if c.rank == CrewRanks.CAPTAIN or c.rank == CrewRanks.COMMANDER:
                 cap_or_command = True
                 break
         if not cap_or_command:
             raise ValueError(
                 "Mission must have at least one Commander or Captain"
             )
+            
         result = sum(1 for c in self.crew if c.years_experience >= 5)
         if self.duration_days > 365 and result < 0.5 * len(self.crew):
             raise ValueError(
-                "Long missions(>365days) need 50% experienced crew (5+ years)"
+                "Long missions (> 365 days) need 50% experienced crew (5+ years)"
             )
+            
         active = sum(1 for c in self.crew if c.is_active)
         if active != len(self.crew):
             raise ValueError("All crew members must be active")
+            
+        return self
 
 
 def display_contact_info(mission: SpaceMission) -> None:
-    print(f"Mission:  {mission.mission_name}")
+    print(f"Mission: {mission.mission_name}")
     print(f"ID: {mission.mission_id}")
-    print(f"Destination:  {mission.destination}")
-    print(f"Duration:  {mission.duration_days} days")
-    print(f"Budget:  ${mission.budget_millions}M")
-    print(f"Crew size:  {len(mission.crew)}")
+    print(f"Destination: {mission.destination}")
+    print(f"Duration: {mission.duration_days} days")
+    print(f"Budget: ${mission.budget_millions}M")
+    print(f"Crew size: {len(mission.crew)}")
     print("Crew members:")
     for c in mission.crew:
-        print(f"- {c.name} ({c.rank.value}) - {c.specialization}")
+        print(f"- {c.name} ({c.rank.value})")
 
 
 def main() -> None:
@@ -89,7 +94,6 @@ def main() -> None:
         years_experience=8,
         is_active=True
     )
-
     c3 = CrewMember(
         member_id="CREW03",
         name="Alice Johnson",
@@ -115,6 +119,8 @@ def main() -> None:
     except ValidationError as e:
         print(f"Unexpected error: {e}")
 
+    print("========")
+    print("Expected validation error:")
     c_invalid = CrewMember(
         member_id="CREW04",
         name="Bob Vance",
@@ -138,11 +144,10 @@ def main() -> None:
         )
     except ValidationError as e:
         for error in e.errors():
-            clean_msg = error['msg'].replace("Value error, ", "")
             if not error['loc']:
-                print(clean_msg)
+                print(error['msg'].replace("Value error, ", "").strip())
             else:
-                print(f"Error in {error['loc'][0]}: {clean_msg}")
+                print(f"Error in {error['loc'][0]}: {error['msg']}")
 
 
 if __name__ == "__main__":
